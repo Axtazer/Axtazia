@@ -1,6 +1,6 @@
 {
   "name": "axtazia",
-  "version": "1.0.1",
+  "version": "1.1.4",
   "description": "A bot named Axtazia, for Axtazer's discord server. And code training for himself.",
   "main": "index.js",
   "scripts": {
