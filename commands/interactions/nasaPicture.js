@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } = require('discord.js');
-const { nasaAPI, ownerId, clientId } = require('../../config.json');
+const { APODkey, ownerId, clientId } = require('../../config.json');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -22,7 +22,7 @@ module.exports = {
             const bot = await client.users.fetch(clientId);
 
             // Log en cas d'erreur HTTP(s)
-            const response = await fetch(`https://api.nasa.gov/planetary/apod?api_key=${nasaAPI}&date=${dateInput}`);
+            const response = await fetch(`https://api.nasa.gov/planetary/apod?api_key=${APODkey}&date=${dateInput}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
