@@ -3,10 +3,23 @@ const { clientId, guildId, token } = require('./config.json');
 const fs = require('node:fs');
 const path = require('node:path');
 
+const rest = new REST().setToken(token);
+
 const commands = [];
 // Grab all the command folders from the commands directory you created earlier
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
+
+// for guild-based commands
+rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: [] })
+	.then(() => console.log('Successfully deleted all guild commands.'))
+	.catch(console.error);
+
+// for global commands
+rest.put(Routes.applicationCommands(clientId), { body: [] })
+	.then(() => console.log('Successfully deleted all application commands.'))
+	.catch(console.error);
+
 
 for (const folder of commandFolders) {
 	// Grab all the command files from the commands directory you created earlier
@@ -25,7 +38,6 @@ for (const folder of commandFolders) {
 };
 
 // Construct and prepare an instance of the REST module
-const rest = new REST().setToken(token);
 
 // and deploy your commands!
 (async () => {
