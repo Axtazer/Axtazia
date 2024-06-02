@@ -1,7 +1,7 @@
 // Require the necessary discord.js classes
 const fs = require('node:fs');
 const path = require('node:path');
-const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
+const { Client, Collection, Events, GatewayIntentBits, ActivityType, ActivityPlatform } = require('discord.js');
 const { token } = require('./config.json');
 
 // Create a new client instance
@@ -51,9 +51,11 @@ client.on(Events.InteractionCreate, async interaction => {
 	}
 });
 
-
+// Activity
 client.once(Events.ClientReady, readyClient => {
     console.log(`${readyClient.user.tag} est en ligne !`)
-} );
+	client.user.setActivity('les étoiles ✨', { type: ActivityType.Watching });
+	client.user.setStatus('online');
+});
 
 client.login(token);

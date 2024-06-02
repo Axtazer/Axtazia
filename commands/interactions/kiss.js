@@ -1,5 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
-const axios = require('axios');
+const { SlashCommandBuilder, ChatInputCommandInteraction } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -10,13 +9,13 @@ module.exports = {
 				.setName('target')
 				.setDescription('A qui voudriez-vous faire un bisou ? 💕')
 				.setRequired(true)),
-    
-    async execute(interaction) {3
+        /**
+         * @param {ChatInputCommandInteraction} interaction
+         */
+    async execute(interaction) {
         const target = interaction.options.getUser('target');
-        const picResult = await axios.get('https://nekos.life/api/v2/img/kiss');
-		const picLink = await picResult.data.url;
-
-        await interaction.reply({ content:`${interaction.user} fais un câlin à ${target}`, files: [picLink]})
-
-    }
+        fetch('https://nekos.life/api/v2/img/kiss').then(picLink => picLink.json()).then(picLink => {
+            interaction.reply({ content:`${interaction.user} fais un bisou à ${target}`, files: [picLink.url]})
+            });
+    },
 };
