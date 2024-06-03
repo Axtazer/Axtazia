@@ -10,15 +10,15 @@ const commands = [];
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
 
-// for guild-based commands
-rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: [] })
-	.then(() => console.log('Successfully deleted all guild commands.'))
-	.catch(console.error);
+// // for guild-based commands
+// rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: [] })
+// 	.then(() => console.log('Successfully deleted all guild commands.'))
+// 	.catch(console.error);
 
-// for global commands
-rest.put(Routes.applicationCommands(clientId), { body: [] })
-	.then(() => console.log('Successfully deleted all application commands.'))
-	.catch(console.error);
+// // for global commands
+// rest.put(Routes.applicationCommands(clientId), { body: [] })
+// 	.then(() => console.log('Successfully deleted all application commands.'))
+// 	.catch(console.error);
 
 
 for (const folder of commandFolders) {
