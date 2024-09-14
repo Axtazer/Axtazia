@@ -3,5 +3,7 @@
 	"clientId": "CLIENT_ID",
 	"guildId": "YOUR_GUILD_ID",
 	"ownerId": "OWNER_ID",
-	"APODkey": "NASA-APOD_API_KEY"
+	"APODkey": "NASA-APOD_API_KEY",
+	"targetTwitchId": "DISCORD_CLIENT_ID_OF_TWITCH_NOTIF_TARGET",
+	"twitchNotifId": "CHANNEL_ID_FOR_TWITCH_NOTIF"
 }
