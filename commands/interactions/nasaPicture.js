@@ -1,5 +1,8 @@
 const { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } = require('discord.js');
-const { APODkey, ownerId, clientId } = require('../../config.json');
+require('dotenv').config();
+APODkey = process.env.APOD_KEY;
+ownerId = process.env.OWNER_ID;
+clientId = process.env.CLIENT_ID;
 
 module.exports = {
     data: new SlashCommandBuilder()

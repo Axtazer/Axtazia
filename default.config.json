@@ -1,7 +1,0 @@
-{
-	"token": "YOUR_BOT_TOKEN",
-	"clientId": "CLIENT_ID",
-	"guildId": "YOUR_GUILD_ID",
-	"ownerId": "OWNER_ID",
-	"APODkey": "NASA-APOD_API_KEY"
-}

@@ -1,27 +1,29 @@
 {
   "name": "axtazia",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "A bot named Axtazia, for Axtazer's discord server. And code training for himself.",
-  "main": "index.js",
-  "scripts": {
-    "start": "node ./index.js",
-    "deploy": "node ./deploy-commands.js"
+  "keywords": [
+    "axtazia",
+    "discord",
+    "bot"
+  ],
+  "homepage": "https://github.com/Axtazer/Axtazia#readme",
+  "bugs": {
+    "url": "https://github.com/Axtazer/Axtazia/issues"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Axtazer/Axtazia.git"
   },
-  "keywords": [
-    "axtazia",
-    "axtazer"
-  ],
+  "license": "MIT",
   "author": "Axtazer",
-  "license": "Unlicense",
-  "bugs": {
-    "url": "https://github.com/Axtazer/Axtazia/issues"
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "homepage": "https://github.com/Axtazer/Axtazia#readme",
   "dependencies": {
-    "discord.js": "^14.15.2"
+    "discord.js": "^14.25.1",
+    "dotenv": "^17.3.1"
   }
 }

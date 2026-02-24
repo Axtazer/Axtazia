@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: axtazia-bot
+  labels:
+    app: axtazia
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: axtazia
+  template:
+    metadata:
+      labels:
+        app: axtazia
+    spec:
+      containers:
+      - name: bot
+        image: ton-registry/axtazia:latest
+        imagePullPolicy: Always
+        env:
+        # Configuration de base
+        - name: DISCORD_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: axtazia-secrets
+              key: DISCORD_TOKEN
+        - name: CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: axtazia-secrets
+              key: CLIENT_ID
+        - name: GUILD_ID
+          valueFrom:
+            secretKeyRef:
+              name: axtazia-secrets
+              key: GUILD_ID
+        - name: OWNER_ID
+          valueFrom:
+            secretKeyRef:
+              name: axtazia-secrets
+              key: OWNER_ID
+        
+        # NASA APOD
+        - name: NASA_APOD_KEY
+          valueFrom:
+            secretKeyRef:
+              name: axtazia-secrets
+              key: NASA_APOD_KEY
+
+        # Wake On Lan (WOL)
+        - name: WOL_API_URL
+          valueFrom:
+            secretKeyRef:
+              name: axtazia-secrets
+              key: WOL_API_URL
+        - name: WOL_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: axtazia-secrets
+              key: WOL_API_TOKEN
+        
+        # Limites de ressources pour que ça ne "consomme rien"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
