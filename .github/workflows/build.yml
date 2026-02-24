@@ -22,6 +22,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/axtazia:latest
+          tags: ghcr.io/${{ vars.DOCKERHUB_USERNAME }}/axtazia:latest
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
