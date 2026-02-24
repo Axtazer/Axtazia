@@ -5,7 +5,6 @@ module.exports = {
 	once: true,
 	execute(client) {
         console.log(`${client.user.tag} est en ligne !`);
-        client.user.setActivity('les étoiles ✨', { type: ActivityType.Watching });
-        client.user.setStatus('online');
+        client.user.setActivity('Regarde les étoiles ✨', { type: ActivityType.Custom });
 	},
 };

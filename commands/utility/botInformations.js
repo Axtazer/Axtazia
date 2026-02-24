@@ -35,6 +35,6 @@ module.exports = {
             )
             .setImage(image)
             .setFooter({ text: `${bot.displayName} par ${owner.displayName} avec le 🫀`, iconURL: owner.avatarURL() });
-            await interaction.reply({ embeds: [botInfo], ephemeral: false})
+            await interaction.reply({ embeds: [botInfo]})
     }
 };

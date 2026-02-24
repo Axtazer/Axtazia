@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, MessageFlags } = require('discord.js');
 require('dotenv').config();
 APODkey = process.env.NASA_APOD_KEY;
 ownerId = process.env.OWNER_ID;
@@ -56,10 +56,10 @@ module.exports = {
                 .setImage(imageUrl)
                 .setFooter({ text: `${bot.username} par ${owner.username} avec le 🫀`, iconURL: owner.avatarURL() });
 
-            await interaction.reply({ embeds: [nasaEmbed], ephemeral: false });
+            await interaction.reply({ embeds: [nasaEmbed] });
         } catch (error) {
             console.error(error);
-            await interaction.reply({ content: 'Il y a eu une erreur en récupérant l\'image de la NASA. Veuillez réessayer plus tard.', ephemeral: true });
+            await interaction.reply({ content: 'Il y a eu une erreur en récupérant l\'image de la NASA. Veuillez réessayer plus tard.', flags: MessageFlags.Ephemeral });
         }
     },
 };

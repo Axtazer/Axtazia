@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 require('dotenv').config();
 ownerId = process.env.OWNER_ID;
 API_URL = process.env.WOL_API_URL;
@@ -23,18 +23,18 @@ module.exports = {
     if (!API_URL || !API_TOKEN) {
       return interaction.reply({
         content: ERRORS.CONFIG,
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
     }
     
     if (interaction.user.id !== ownerId) {
       return interaction.reply({
         content: ERRORS.UNAUTHORIZED,
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
     
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     
     try {
       const url = new URL(API_URL);

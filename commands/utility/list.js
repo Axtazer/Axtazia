@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, MessageFlags } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
 require('dotenv').config();
@@ -73,11 +73,11 @@ module.exports = {
             listEmbed.setAuthor({ name: bot.displayName, iconURL: bot.avatarURL(), url: 'https://axtazer.online' });
             listEmbed.setFooter({ text: `${bot.username} par ${owner.username} avec le 🫀`, iconURL: owner.avatarURL() });
 
-            await interaction.reply({ embeds: [listEmbed], ephemeral: false });
+            await interaction.reply({ embeds: [listEmbed] });
         } catch (error) {
             console.error(error);
             const owner = await client.users.fetch(ownerId);
-            await interaction.reply({ content: `Contact ${owner.username}, because there an error :\n${error.message}`, ephemeral: true });
+            await interaction.reply({ content: `Contact ${owner.username}, because there an error :\n${error.message}`, flags: MessageFlags.Ephemeral });
         }
     },
 };
