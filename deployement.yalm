@@ -14,53 +14,53 @@ spec:
       labels:
         app: axtazia
     spec:
+      # Pour pouvoir tirer l'image depuis GitHub
+      imagePullSecrets:
+        - name: ghcr-auth
       containers:
       - name: bot
-        image: ton-registry/axtazia:latest
+        image: ghcr.io/axtazer/axtazia:latest
         imagePullPolicy: Always
         env:
-        # Configuration de base
+        # --- SECRETS ---
         - name: DISCORD_TOKEN
           valueFrom:
             secretKeyRef:
               name: axtazia-secrets
               key: DISCORD_TOKEN
-        - name: CLIENT_ID
-          valueFrom:
-            secretKeyRef:
-              name: axtazia-secrets
-              key: CLIENT_ID
-        - name: GUILD_ID
-          valueFrom:
-            secretKeyRef:
-              name: axtazia-secrets
-              key: GUILD_ID
-        - name: OWNER_ID
-          valueFrom:
-            secretKeyRef:
-              name: axtazia-secrets
-              key: OWNER_ID
-        
-        # NASA APOD
         - name: NASA_APOD_KEY
           valueFrom:
             secretKeyRef:
               name: axtazia-secrets
               key: NASA_APOD_KEY
-
-        # Wake On Lan (WOL)
-        - name: WOL_API_URL
-          valueFrom:
-            secretKeyRef:
-              name: axtazia-secrets
-              key: WOL_API_URL
         - name: WOL_API_TOKEN
           valueFrom:
             secretKeyRef:
               name: axtazia-secrets
               key: WOL_API_TOKEN
-        
-        # Limites de ressources pour que ça ne "consomme rien"
+
+        # --- CONFIG ---
+        - name: CLIENT_ID
+          valueFrom:
+            configMapKeyRef:
+              name: axtazia-config
+              key: CLIENT_ID
+        - name: GUILD_ID
+          valueFrom:
+            configMapKeyRef:
+              name: axtazia-config
+              key: GUILD_ID
+        - name: OWNER_ID
+          valueFrom:
+            configMapKeyRef:
+              name: axtazia-config
+              key: OWNER_ID
+        - name: WOL_API_URL
+          valueFrom:
+            configMapKeyRef:
+              name: axtazia-config
+              key: WOL_API_URL
+
         resources:
           requests:
             memory: "64Mi"

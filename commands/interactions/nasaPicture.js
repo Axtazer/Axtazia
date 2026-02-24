@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } = require('discord.js');
 require('dotenv').config();
-APODkey = process.env.APOD_KEY;
+APODkey = process.env.NASA_APOD_KEY;
 ownerId = process.env.OWNER_ID;
 clientId = process.env.CLIENT_ID;
 
