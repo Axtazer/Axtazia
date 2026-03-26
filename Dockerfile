@@ -14,6 +14,7 @@ RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 COPY --from=builder /app/index.js ./
 COPY --from=builder /app/commands ./commands
 COPY --from=builder /app/events ./events
+COPY --from=builder /app/src ./src
 
 USER node
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
