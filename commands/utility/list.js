@@ -1,9 +1,7 @@
 const { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, MessageFlags } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
-require('dotenv').config();
-ownerId = process.env.OWNER_ID;
-clientId = process.env.CLIENT_ID;
+const ownerId = process.env.OWNER_ID;
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -46,7 +44,7 @@ module.exports = {
             readCommands(commandsPath, 'General');
 
             const owner = await client.users.fetch(ownerId);
-            const bot = await client.users.fetch(clientId);
+            const bot = client.user;
 
             // Ordre custom et noms
             const categoryOrder = [
@@ -76,8 +74,7 @@ module.exports = {
             await interaction.reply({ embeds: [listEmbed] });
         } catch (error) {
             console.error(error);
-            const owner = await client.users.fetch(ownerId);
-            await interaction.reply({ content: `Contact ${owner.username}, because there an error :\n${error.message}`, flags: MessageFlags.Ephemeral });
+            await interaction.reply({ content: 'Une erreur est survenue lors du chargement des commandes. Veuillez réessayer plus tard.', flags: MessageFlags.Ephemeral });
         }
     },
 };

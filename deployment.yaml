@@ -68,3 +68,16 @@ spec:
           limits:
             memory: "128Mi"
             cpu: "100m"
+
+        livenessProbe:
+          exec:
+            command: ["node", "-e", "process.exit(0)"]
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          failureThreshold: 3
+
+        readinessProbe:
+          exec:
+            command: ["node", "-e", "process.exit(0)"]
+          initialDelaySeconds: 5
+          periodSeconds: 10
