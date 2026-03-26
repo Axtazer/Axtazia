@@ -1,5 +1,6 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, PermissionFlagsBits, MessageComponentInteraction } = require('discord.js');
-const { ownerId, clientId } = require('../../config.json');
+const ownerId = process.env.OWNER_ID;
+const clientId = process.env.CLIENT_ID;
 
 module.exports = {
     // Slash command data
