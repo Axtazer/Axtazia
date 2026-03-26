@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ChatInputCommandInteraction } = require('discord.js');
+const { SlashCommandBuilder, ChatInputCommandInteraction, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -9,6 +9,6 @@ module.exports = {
         */
     async execute(interaction) {
         const client = interaction.client
-        await interaction.reply({ content: `🏓 **${client.ws.ping}** ms !`, ephemeral: true })
+        await interaction.reply({ content: `🏓 **${client.ws.ping}** ms !`, flags: MessageFlags.Ephemeral })
     }
 };
