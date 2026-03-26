@@ -1,5 +1,6 @@
-const { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } = require('discord.js');
-const { APODkey, ownerId, clientId } = require('../../config.json');
+const { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, MessageFlags } = require('discord.js');
+const APODkey = process.env.NASA_APOD_KEY;
+const ownerId = process.env.OWNER_ID;
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -15,14 +16,17 @@ module.exports = {
     async execute(interaction) {
         const dateInput = interaction.options.getString('date');
         const client = interaction.client;
-        const nasaAuthor = 'https://cdn.discordapp.com/attachments/1018273550160908309/1246920387237777518/R.png?ex=665e249a&is=665cd31a&hm=80383a62453b49a920c9b844ea3f2d08f5a8abc5adbb3891c370b3442b2b3c47&';
+
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+            return interaction.reply({ content: '❌ Format de date invalide. Utilisez le format `AAAA-MM-JJ` (ex: `2024-01-15`).', flags: MessageFlags.Ephemeral });
+        }
 
         try {
             const owner = await client.users.fetch(ownerId);
-            const bot = await client.users.fetch(clientId);
+            const bot = client.user;
 
-            // Log en cas d'erreur HTTP(s)
-            const response = await fetch(`https://api.nasa.gov/planetary/apod?api_key=${APODkey}&date=${dateInput}`);
+            const params = new URLSearchParams({ api_key: APODkey, date: dateInput });
+            const response = await fetch(`https://api.nasa.gov/planetary/apod?${params}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -43,7 +47,7 @@ module.exports = {
             const nasaEmbed = new EmbedBuilder()
                 .setColor(0x0032A0)
                 .setTitle("Image de la NASA")
-                .setAuthor({ name: "NASA - APOD", iconURL: nasaAuthor, url: 'https://apod.nasa.gov/' })
+                .setAuthor({ name: "NASA - APOD", url: 'https://apod.nasa.gov/' })
                 .setDescription("Voici une image du site de la NASA (APOD - API).")
                 .addFields(
                     { name: "Titre", value: nasaData.title, inline: false },
@@ -51,12 +55,12 @@ module.exports = {
                     { name: 'Explications', value: explanation, inline: false }
                 )
                 .setImage(imageUrl)
-                .setFooter({ text: `${bot.username} par ${owner.username} avec le 🫀`, iconURL: owner.avatarURL() });
+                .setFooter({ text: `${bot.displayName} par ${owner.displayName} avec le 🫀`, iconURL: owner.avatarURL() });
 
-            await interaction.reply({ embeds: [nasaEmbed], ephemeral: false });
+            await interaction.reply({ embeds: [nasaEmbed] });
         } catch (error) {
             console.error(error);
-            await interaction.reply({ content: 'Il y a eu une erreur en récupérant l\'image de la NASA. Veuillez réessayer plus tard.', ephemeral: true });
+            await interaction.reply({ content: 'Il y a eu une erreur en récupérant l\'image de la NASA. Veuillez réessayer plus tard.', flags: MessageFlags.Ephemeral });
         }
     },
 };
