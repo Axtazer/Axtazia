@@ -20,10 +20,15 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
+    "deploy": "node deploy-commands.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "discord.js": "^14.25.1",
     "dotenv": "^17.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
   }
 }

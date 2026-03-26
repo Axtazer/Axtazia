@@ -1,8 +1,7 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
-require('dotenv').config();
-ownerId = process.env.OWNER_ID;
-API_URL = process.env.WOL_API_URL;
-API_TOKEN = process.env.WOL_API_TOKEN;
+const ownerId = process.env.OWNER_ID;
+const API_URL = process.env.WOL_API_URL;
+const API_TOKEN = process.env.WOL_API_TOKEN;
 
 // Messages d'erreur centralisés
 const ERRORS = {
@@ -37,12 +36,12 @@ module.exports = {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     
     try {
-      const url = new URL(API_URL);
-      url.searchParams.set('token', API_TOKEN);
-      
-      const res = await fetch(url.toString(), {
+      const res = await fetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${API_TOKEN}`
+        }
       });
       
       if (!res.ok) {
