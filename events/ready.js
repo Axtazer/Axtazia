@@ -20,6 +20,6 @@ module.exports = {
         });
 
         // Widget de profil (uptime serveur via Prometheus)
-        startProfileWidgetUpdates();
+        startProfileWidgetUpdates(client.user.id);
 	},
 };
