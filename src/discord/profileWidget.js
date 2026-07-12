@@ -1,6 +1,6 @@
 'use strict';
 
-const { getValidAccessToken } = require('./oauth');
+const { getValidAccessToken, buildAuthorizeUrl } = require('./oauth');
 
 const PROMETHEUS_URL = process.env.PROMETHEUS_URL || 'http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc.cluster.local:8428';
 
@@ -117,10 +117,16 @@ async function refreshAndReschedule() {
  */
 function startProfileWidgetUpdates() {
     if (refreshTimeout) return;
+
     if (!process.env.DISCORD_OAUTH_REFRESH_TOKEN) {
-        console.warn('[ProfileWidget] DISCORD_OAUTH_REFRESH_TOKEN non défini, widget désactivé. Visite l\'URL retournée par buildAuthorizeUrl() pour l\'autoriser.');
+        if (!process.env.CLIENT_ID || !process.env.DISCORD_OAUTH_REDIRECT_URI) {
+            console.warn('[ProfileWidget] DISCORD_OAUTH_REFRESH_TOKEN non défini, widget désactivé. CLIENT_ID/DISCORD_OAUTH_REDIRECT_URI doivent aussi être configurés avant de pouvoir autoriser.');
+            return;
+        }
+        console.warn(`[ProfileWidget] DISCORD_OAUTH_REFRESH_TOKEN non défini, widget désactivé. Visite cette URL pour autoriser (une seule fois) : ${buildAuthorizeUrl()}`);
         return;
     }
+
     refreshAndReschedule();
 }
 
