@@ -71,7 +71,7 @@ function startWebhookServer(client) {
 
     const server = http.createServer(async (req, res) => {
         // Callback OAuth2 Discord (autorisation manuelle unique pour le widget de profil)
-        if (req.method === 'GET' && req.url.startsWith('/oauth/discord/callback')) {
+        if (req.method === 'GET' && req.url.startsWith('/oauth/callback/discord')) {
             const code = new URL(req.url, 'http://localhost').searchParams.get('code');
 
             if (!code) {
