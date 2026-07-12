@@ -49,12 +49,12 @@ async function fetchServerUptimeSeconds() {
 
 /**
  * Met à jour le widget de profil de l'application (identity profile) avec l'uptime formaté.
+ * @param {string} userId - ID utilisateur du bot (client.user.id), distinct de l'application ID
  * @param {string} formattedUptime
  * @returns {Promise<void>}
  */
-async function updateProfileWidget(formattedUptime) {
+async function updateProfileWidget(userId, formattedUptime) {
     const applicationId = process.env.CLIENT_ID;
-    const userId = process.env.CLIENT_ID;
     const token = process.env.DISCORD_TOKEN;
 
     const url = `https://discord.com/api/v9/applications/${applicationId}/users/${userId}/identities/0/profile`;
@@ -92,27 +92,29 @@ let refreshTimeout = null;
 /**
  * Rafraîchit le widget de profil et reprogramme le prochain rafraîchissement.
  * Fréquence adaptative : 10 min si uptime < 24h, sinon 30 min.
+ * @param {string} userId - ID utilisateur du bot (client.user.id)
  */
-async function refreshAndReschedule() {
+async function refreshAndReschedule(userId) {
     let nextDelay = TEN_MINUTES;
 
     try {
         const uptimeSeconds = await fetchServerUptimeSeconds();
-        await updateProfileWidget(formatUptime(uptimeSeconds));
+        await updateProfileWidget(userId, formatUptime(uptimeSeconds));
         nextDelay = uptimeSeconds < ONE_DAY_SECONDS ? TEN_MINUTES : THIRTY_MINUTES;
     } catch (err) {
         console.error('[ProfileWidget] Erreur lors du rafraîchissement de l\'uptime:', err);
     }
 
-    refreshTimeout = setTimeout(refreshAndReschedule, nextDelay);
+    refreshTimeout = setTimeout(() => refreshAndReschedule(userId), nextDelay);
 }
 
 /**
  * Démarre le cycle de mise à jour périodique du widget de profil.
+ * @param {string} userId - ID utilisateur du bot (client.user.id)
  */
-function startProfileWidgetUpdates() {
+function startProfileWidgetUpdates(userId) {
     if (refreshTimeout) return;
-    refreshAndReschedule();
+    refreshAndReschedule(userId);
 }
 
 module.exports = { formatUptime, fetchServerUptimeSeconds, updateProfileWidget, startProfileWidgetUpdates };
