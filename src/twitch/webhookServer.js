@@ -77,7 +77,7 @@ function startWebhookServer(client) {
             const state = params.get('state');
 
             if (!code || !state || !consumeState(state)) {
-                res.writeHead(400, { 'Content-Type': 'text/plain' });
+                res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
                 res.end('Requête invalide ou expirée (code/state manquant ou incorrect). Relance buildAuthorizeUrl().');
                 return;
             }
@@ -85,11 +85,11 @@ function startWebhookServer(client) {
             try {
                 const tokens = await exchangeCodeForToken(code);
                 console.log('[OAuth] Autorisation réussie, refresh_token obtenu.');
-                res.writeHead(200, { 'Content-Type': 'text/plain' });
+                res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
                 res.end(`Autorisation réussie. Copie ce refresh_token dans 1Password (DISCORD_OAUTH_REFRESH_TOKEN) puis ferme cette page :\n\n${tokens.refresh_token}`);
             } catch (err) {
                 console.error('[OAuth] Échec de l\'échange du code:', err);
-                res.writeHead(500, { 'Content-Type': 'text/plain' });
+                res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
                 res.end('Échec de l\'autorisation, voir les logs du bot.');
             }
             return;
@@ -136,7 +136,7 @@ function startWebhookServer(client) {
         if (messageType === MESSAGE_TYPE_VERIFICATION) {
             const challenge = payload.challenge;
             console.log('[Twitch] Challenge de vérification reçu, réponse envoyée.');
-            res.writeHead(200, { 'Content-Type': 'text/plain' });
+            res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
             res.end(challenge);
             return;
         }

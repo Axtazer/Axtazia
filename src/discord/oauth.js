@@ -7,19 +7,28 @@ const AUTHORIZE_URL = 'https://discord.com/oauth2/authorize';
 const SCOPE = 'application_identities.write';
 const STATE_TTL_MS = 10 * 60 * 1000;
 
-const pendingStates = new Map();
+/**
+ * Signe un state pour le protéger contre la falsification (CSRF), sans stockage
+ * côté serveur : la validité tient à la signature HMAC + un TTL sur le timestamp.
+ * Reste valide à travers un redémarrage du process (contrairement à un Map en mémoire).
+ * @param {number} timestamp
+ * @returns {string}
+ */
+function signState(timestamp) {
+    const secret = process.env.DISCORD_CLIENT_SECRET;
+    const hmac = crypto.createHmac('sha256', secret).update(String(timestamp)).digest('base64url');
+    return `${timestamp}.${hmac}`;
+}
 
 /**
  * Construit l'URL d'autorisation OAuth2 à visiter manuellement (une seule fois).
- * Génère un paramètre state à usage unique pour se protéger du CSRF.
+ * Inclut un state signé pour se protéger du CSRF.
  * @returns {string}
  */
 function buildAuthorizeUrl() {
     const clientId = process.env.CLIENT_ID;
     const redirectUri = process.env.DISCORD_OAUTH_REDIRECT_URI;
-
-    const state = crypto.randomBytes(32).toString('base64url');
-    pendingStates.set(state, Date.now() + STATE_TTL_MS);
+    const state = signState(Date.now());
 
     const url = new URL(AUTHORIZE_URL);
     url.searchParams.set('client_id', clientId);
@@ -32,16 +41,25 @@ function buildAuthorizeUrl() {
 }
 
 /**
- * Vérifie et consomme un state reçu sur le callback OAuth2 (usage unique, protection CSRF).
+ * Vérifie un state reçu sur le callback OAuth2 (signature + fraîcheur, protection CSRF).
  * @param {string} state
  * @returns {boolean}
  */
 function consumeState(state) {
-    const expiresAt = pendingStates.get(state);
-    if (!expiresAt) return false;
+    const [timestampRaw, hmac] = String(state).split('.');
+    if (!timestampRaw || !hmac) return false;
 
-    pendingStates.delete(state);
-    return Date.now() <= expiresAt;
+    const timestamp = Number(timestampRaw);
+    if (!Number.isFinite(timestamp) || Date.now() - timestamp > STATE_TTL_MS || timestamp > Date.now()) {
+        return false;
+    }
+
+    const expected = signState(timestamp).split('.')[1];
+    const a = Buffer.from(hmac);
+    const b = Buffer.from(expected);
+    if (a.length !== b.length) return false;
+
+    return crypto.timingSafeEqual(a, b);
 }
 
 /**
