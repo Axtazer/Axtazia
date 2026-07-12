@@ -1,7 +1,5 @@
 'use strict';
 
-const { getValidAccessToken, buildAuthorizeUrl } = require('./oauth');
-
 const PROMETHEUS_URL = process.env.PROMETHEUS_URL || 'http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc.cluster.local:8428';
 
 /**
@@ -49,17 +47,46 @@ async function fetchServerUptimeSeconds() {
     return Date.now() / 1000 - bootTime;
 }
 
+let cachedOwnerId = null;
+
+/**
+ * Récupère (et met en cache) l'owner_id de l'application, via l'API Discord.
+ * C'est le compte propriétaire de l'app qui possède l'identity profile ciblée
+ * par le widget (pas le bot lui-même).
+ * @returns {Promise<string>}
+ */
+async function getApplicationOwnerId() {
+    if (cachedOwnerId) return cachedOwnerId;
+
+    const token = process.env.DISCORD_TOKEN;
+    const res = await fetch('https://discord.com/api/v10/oauth2/applications/@me', {
+        headers: { 'Authorization': `Bot ${token}` },
+    });
+
+    if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Échec de la récupération des infos application (${res.status}): ${text}`);
+    }
+
+    const data = await res.json();
+    cachedOwnerId = data.owner?.id;
+
+    if (!cachedOwnerId) {
+        throw new Error('owner_id introuvable dans la réponse oauth2/applications/@me.');
+    }
+
+    return cachedOwnerId;
+}
+
 /**
  * Met à jour le widget de profil (identity profile) avec l'uptime formaté.
- * Le profil ciblé est celui du compte propriétaire (OWNER_ID) qui a autorisé
- * l'application via OAuth2 (scope application_identities.write), pas le bot.
  * @param {string} formattedUptime
  * @returns {Promise<void>}
  */
 async function updateProfileWidget(formattedUptime) {
     const applicationId = process.env.CLIENT_ID;
-    const userId = process.env.OWNER_ID;
-    const accessToken = await getValidAccessToken();
+    const token = process.env.DISCORD_TOKEN;
+    const userId = await getApplicationOwnerId();
 
     const url = `https://discord.com/api/v9/applications/${applicationId}/users/${userId}/identities/0/profile`;
 
@@ -74,7 +101,7 @@ async function updateProfileWidget(formattedUptime) {
     const res = await fetch(url, {
         method: 'PATCH',
         headers: {
-            'Authorization': `Bearer ${accessToken}`,
+            'Authorization': `Bot ${token}`,
             'Content-Type': 'application/json',
             'User-Agent': 'DiscordBot (https://github.com/Axtazer/Axtazia, 1.0.0)',
         },
@@ -113,20 +140,9 @@ async function refreshAndReschedule() {
 
 /**
  * Démarre le cycle de mise à jour périodique du widget de profil.
- * Ne fait rien si l'autorisation OAuth2 initiale n'a pas encore été effectuée.
  */
 function startProfileWidgetUpdates() {
     if (refreshTimeout) return;
-
-    if (!process.env.DISCORD_OAUTH_REFRESH_TOKEN) {
-        if (!process.env.CLIENT_ID || !process.env.DISCORD_OAUTH_REDIRECT_URI) {
-            console.warn('[ProfileWidget] DISCORD_OAUTH_REFRESH_TOKEN non défini, widget désactivé. CLIENT_ID/DISCORD_OAUTH_REDIRECT_URI doivent aussi être configurés avant de pouvoir autoriser.');
-            return;
-        }
-        console.warn(`[ProfileWidget] DISCORD_OAUTH_REFRESH_TOKEN non défini, widget désactivé. Visite cette URL pour autoriser (une seule fois) : ${buildAuthorizeUrl()}`);
-        return;
-    }
-
     refreshAndReschedule();
 }
 
