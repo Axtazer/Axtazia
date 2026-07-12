@@ -47,40 +47,21 @@ async function fetchServerUptimeSeconds() {
     return Date.now() / 1000 - bootTime;
 }
 
-let cachedOwnerId = null;
-
 /**
- * Récupère (et met en cache) l'owner_id de l'application, via l'API Discord.
- * C'est le compte propriétaire de l'app qui possède l'identity profile ciblée
- * par le widget (pas le bot lui-même).
- * @returns {Promise<string>}
+ * ID du compte personnel ciblé par le widget (pas le bot lui-même).
+ * Note : oauth2/applications/@me renvoie owner.id = l'ID de la Team si
+ * l'app est possédée par une Team, pas un vrai compte utilisateur — donc
+ * on utilise directement OWNER_ID plutôt que de faire confiance à ce champ.
+ * @returns {string}
  */
-async function getApplicationOwnerId() {
-    if (cachedOwnerId) return cachedOwnerId;
+function getApplicationOwnerId() {
+    const ownerId = process.env.OWNER_ID;
 
-    const token = process.env.DISCORD_TOKEN;
-    const res = await fetch('https://discord.com/api/v10/oauth2/applications/@me', {
-        headers: { 'Authorization': `Bot ${token}` },
-    });
-
-    if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`Échec de la récupération des infos application (${res.status}): ${text}`);
+    if (!ownerId) {
+        throw new Error('OWNER_ID non défini.');
     }
 
-    const data = await res.json();
-    cachedOwnerId = data.owner?.id;
-
-    // Debug temporaire : vérifie le bit Social SDK (1 << 10 = 1024) dans flags.
-    const flags = data.flags ?? 0;
-    const socialSdkEnabled = (flags & (1 << 10)) !== 0;
-    console.log(`[ProfileWidget] Debug application: id=${data.id} owner=${cachedOwnerId} flags=${flags} socialSdkEnabled=${socialSdkEnabled}`);
-
-    if (!cachedOwnerId) {
-        throw new Error('owner_id introuvable dans la réponse oauth2/applications/@me.');
-    }
-
-    return cachedOwnerId;
+    return ownerId;
 }
 
 /**
@@ -91,7 +72,7 @@ async function getApplicationOwnerId() {
 async function updateProfileWidget(formattedUptime) {
     const applicationId = process.env.CLIENT_ID;
     const token = process.env.DISCORD_TOKEN;
-    const userId = await getApplicationOwnerId();
+    const userId = getApplicationOwnerId();
 
     const url = `https://discord.com/api/v9/applications/${applicationId}/users/${userId}/identities/0/profile`;
 
