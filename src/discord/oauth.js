@@ -1,24 +1,47 @@
 'use strict';
 
+const crypto = require('node:crypto');
+
 const TOKEN_URL = 'https://discord.com/api/v10/oauth2/token';
 const AUTHORIZE_URL = 'https://discord.com/oauth2/authorize';
 const SCOPE = 'application_identities.write';
+const STATE_TTL_MS = 10 * 60 * 1000;
+
+const pendingStates = new Map();
 
 /**
  * Construit l'URL d'autorisation OAuth2 à visiter manuellement (une seule fois).
+ * Génère un paramètre state à usage unique pour se protéger du CSRF.
  * @returns {string}
  */
 function buildAuthorizeUrl() {
     const clientId = process.env.CLIENT_ID;
     const redirectUri = process.env.DISCORD_OAUTH_REDIRECT_URI;
 
+    const state = crypto.randomBytes(32).toString('base64url');
+    pendingStates.set(state, Date.now() + STATE_TTL_MS);
+
     const url = new URL(AUTHORIZE_URL);
     url.searchParams.set('client_id', clientId);
     url.searchParams.set('redirect_uri', redirectUri);
     url.searchParams.set('response_type', 'code');
     url.searchParams.set('scope', SCOPE);
+    url.searchParams.set('state', state);
 
     return url.toString();
+}
+
+/**
+ * Vérifie et consomme un state reçu sur le callback OAuth2 (usage unique, protection CSRF).
+ * @param {string} state
+ * @returns {boolean}
+ */
+function consumeState(state) {
+    const expiresAt = pendingStates.get(state);
+    if (!expiresAt) return false;
+
+    pendingStates.delete(state);
+    return Date.now() <= expiresAt;
 }
 
 /**
@@ -85,6 +108,15 @@ async function refreshAccessToken(refreshToken) {
     return res.json();
 }
 
+/**
+ * Empreinte courte non-sensible d'un secret, utilisable dans les logs pour corrélation.
+ * @param {string} secret
+ * @returns {string}
+ */
+function fingerprint(secret) {
+    return crypto.createHash('sha256').update(secret).digest('hex').slice(0, 8);
+}
+
 let cachedAccessToken = null;
 let cachedExpiresAt = 0;
 // Refresh token courant, initialisé depuis l'env mais mis à jour en mémoire
@@ -111,10 +143,10 @@ async function getValidAccessToken() {
     cachedExpiresAt = Date.now() + tokens.expires_in * 1000;
     if (tokens.refresh_token && tokens.refresh_token !== currentRefreshToken) {
         currentRefreshToken = tokens.refresh_token;
-        console.warn('[OAuth] Discord a fourni un nouveau refresh_token. Mets à jour DISCORD_OAUTH_REFRESH_TOKEN dans 1Password pour éviter une perte d\'accès au prochain redémarrage:', currentRefreshToken);
+        console.warn(`[OAuth] Discord a fourni un nouveau refresh_token (${fingerprint(currentRefreshToken)}). Mets à jour DISCORD_OAUTH_REFRESH_TOKEN dans 1Password pour éviter une perte d'accès au prochain redémarrage.`);
     }
 
     return cachedAccessToken;
 }
 
-module.exports = { buildAuthorizeUrl, exchangeCodeForToken, refreshAccessToken, getValidAccessToken };
+module.exports = { buildAuthorizeUrl, consumeState, exchangeCodeForToken, refreshAccessToken, getValidAccessToken };
