@@ -1,5 +1,7 @@
 'use strict';
 
+const { getValidAccessToken } = require('./oauth');
+
 const PROMETHEUS_URL = process.env.PROMETHEUS_URL || 'http://vmsingle-victoria-metrics-k8s-stack.monitoring.svc.cluster.local:8428';
 
 /**
@@ -48,14 +50,16 @@ async function fetchServerUptimeSeconds() {
 }
 
 /**
- * Met à jour le widget de profil de l'application (identity profile) avec l'uptime formaté.
- * @param {string} userId - ID utilisateur du bot (client.user.id), distinct de l'application ID
+ * Met à jour le widget de profil (identity profile) avec l'uptime formaté.
+ * Le profil ciblé est celui du compte propriétaire (OWNER_ID) qui a autorisé
+ * l'application via OAuth2 (scope application_identities.write), pas le bot.
  * @param {string} formattedUptime
  * @returns {Promise<void>}
  */
-async function updateProfileWidget(userId, formattedUptime) {
+async function updateProfileWidget(formattedUptime) {
     const applicationId = process.env.CLIENT_ID;
-    const token = process.env.DISCORD_TOKEN;
+    const userId = process.env.OWNER_ID;
+    const accessToken = await getValidAccessToken();
 
     const url = `https://discord.com/api/v9/applications/${applicationId}/users/${userId}/identities/0/profile`;
 
@@ -70,7 +74,7 @@ async function updateProfileWidget(userId, formattedUptime) {
     const res = await fetch(url, {
         method: 'PATCH',
         headers: {
-            'Authorization': `Bot ${token}`,
+            'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
             'User-Agent': 'DiscordBot (https://github.com/Axtazer/Axtazia, 1.0.0)',
         },
@@ -92,29 +96,32 @@ let refreshTimeout = null;
 /**
  * Rafraîchit le widget de profil et reprogramme le prochain rafraîchissement.
  * Fréquence adaptative : 10 min si uptime < 24h, sinon 30 min.
- * @param {string} userId - ID utilisateur du bot (client.user.id)
  */
-async function refreshAndReschedule(userId) {
+async function refreshAndReschedule() {
     let nextDelay = TEN_MINUTES;
 
     try {
         const uptimeSeconds = await fetchServerUptimeSeconds();
-        await updateProfileWidget(userId, formatUptime(uptimeSeconds));
+        await updateProfileWidget(formatUptime(uptimeSeconds));
         nextDelay = uptimeSeconds < ONE_DAY_SECONDS ? TEN_MINUTES : THIRTY_MINUTES;
     } catch (err) {
         console.error('[ProfileWidget] Erreur lors du rafraîchissement de l\'uptime:', err);
     }
 
-    refreshTimeout = setTimeout(() => refreshAndReschedule(userId), nextDelay);
+    refreshTimeout = setTimeout(refreshAndReschedule, nextDelay);
 }
 
 /**
  * Démarre le cycle de mise à jour périodique du widget de profil.
- * @param {string} userId - ID utilisateur du bot (client.user.id)
+ * Ne fait rien si l'autorisation OAuth2 initiale n'a pas encore été effectuée.
  */
-function startProfileWidgetUpdates(userId) {
+function startProfileWidgetUpdates() {
     if (refreshTimeout) return;
-    refreshAndReschedule(userId);
+    if (!process.env.DISCORD_OAUTH_REFRESH_TOKEN) {
+        console.warn('[ProfileWidget] DISCORD_OAUTH_REFRESH_TOKEN non défini, widget désactivé. Visite l\'URL retournée par buildAuthorizeUrl() pour l\'autoriser.');
+        return;
+    }
+    refreshAndReschedule();
 }
 
 module.exports = { formatUptime, fetchServerUptimeSeconds, updateProfileWidget, startProfileWidgetUpdates };

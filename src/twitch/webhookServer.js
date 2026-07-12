@@ -3,6 +3,7 @@
 const http = require('node:http');
 const crypto = require('node:crypto');
 const { sendLiveNotification } = require('./notifier');
+const { exchangeCodeForToken } = require('../discord/oauth');
 
 const TWITCH_MESSAGE_ID = 'twitch-eventsub-message-id';
 const TWITCH_MESSAGE_TIMESTAMP = 'twitch-eventsub-message-timestamp';
@@ -69,6 +70,29 @@ function startWebhookServer(client) {
     }
 
     const server = http.createServer(async (req, res) => {
+        // Callback OAuth2 Discord (autorisation manuelle unique pour le widget de profil)
+        if (req.method === 'GET' && req.url.startsWith('/oauth/discord/callback')) {
+            const code = new URL(req.url, 'http://localhost').searchParams.get('code');
+
+            if (!code) {
+                res.writeHead(400, { 'Content-Type': 'text/plain' });
+                res.end('Paramètre "code" manquant.');
+                return;
+            }
+
+            try {
+                const tokens = await exchangeCodeForToken(code);
+                console.log('[OAuth] Autorisation réussie. Ajoute ce refresh_token dans 1Password (DISCORD_OAUTH_REFRESH_TOKEN):', tokens.refresh_token);
+                res.writeHead(200, { 'Content-Type': 'text/plain' });
+                res.end('Autorisation réussie. Le refresh_token a été loggé côté serveur, copie-le dans 1Password.');
+            } catch (err) {
+                console.error('[OAuth] Échec de l\'échange du code:', err);
+                res.writeHead(500, { 'Content-Type': 'text/plain' });
+                res.end('Échec de l\'autorisation, voir les logs du bot.');
+            }
+            return;
+        }
+
         // On ne traite que POST /webhook/twitch
         if (req.method !== 'POST' || req.url !== '/webhook/twitch') {
             res.writeHead(404);
