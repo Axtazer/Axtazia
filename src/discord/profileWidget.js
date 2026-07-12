@@ -71,6 +71,11 @@ async function getApplicationOwnerId() {
     const data = await res.json();
     cachedOwnerId = data.owner?.id;
 
+    // Debug temporaire : vérifie le bit Social SDK (1 << 10 = 1024) dans flags.
+    const flags = data.flags ?? 0;
+    const socialSdkEnabled = (flags & (1 << 10)) !== 0;
+    console.log(`[ProfileWidget] Debug application: id=${data.id} owner=${cachedOwnerId} flags=${flags} socialSdkEnabled=${socialSdkEnabled}`);
+
     if (!cachedOwnerId) {
         throw new Error('owner_id introuvable dans la réponse oauth2/applications/@me.');
     }
