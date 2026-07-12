@@ -1,6 +1,7 @@
 const { Events, ActivityType } = require('discord.js');
 const { startWebhookServer } = require('../src/twitch/webhookServer');
 const { subscribeToStreamOnline } = require('../src/twitch/subscriptions');
+const { startProfileWidgetUpdates } = require('../src/discord/profileWidget');
 
 module.exports = {
 	name: Events.ClientReady,
@@ -17,5 +18,8 @@ module.exports = {
         subscribeToStreamOnline(process.env.TWITCH_BROADCASTER_ID).catch(err => {
             console.error('[Twitch] Erreur non gérée lors de l\'abonnement EventSub:', err);
         });
+
+        // Widget de profil (uptime serveur via Prometheus)
+        startProfileWidgetUpdates();
 	},
 };
