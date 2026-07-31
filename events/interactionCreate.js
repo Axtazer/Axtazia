@@ -1,5 +1,6 @@
 const { Events, MessageFlags } = require('discord.js');
 const { handleMorpionButton } = require('../commands/games/morpion');
+const { handleStreamSelect } = require('../commands/utility/stream');
 
 module.exports = {
 	name: Events.InteractionCreate,
@@ -21,6 +22,37 @@ module.exports = {
 					await interaction.followUp({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral });
 				} else {
 					await interaction.reply({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral });
+				}
+			}
+		} else if (interaction.isAutocomplete()) {
+			const command = interaction.client.commands.get(interaction.commandName);
+
+			if (!command || typeof command.autocomplete !== 'function') {
+				return;
+			}
+
+			try {
+				await command.autocomplete(interaction);
+			} catch (error) {
+				console.error(error);
+			}
+		} else if (interaction.isStringSelectMenu()) {
+			if (interaction.customId.startsWith('stream_')) {
+				try {
+					await handleStreamSelect(interaction);
+				} catch (error) {
+					console.error('[Stream] Erreur lors du traitement du select menu:', error);
+					if (interaction.replied || interaction.deferred) {
+						await interaction.followUp({
+							content: 'Une erreur est survenue lors du traitement de cette action.',
+							flags: MessageFlags.Ephemeral,
+						});
+					} else {
+						await interaction.reply({
+							content: 'Une erreur est survenue lors du traitement de cette action.',
+							flags: MessageFlags.Ephemeral,
+						});
+					}
 				}
 			}
 		} else if (interaction.isButton()) {
