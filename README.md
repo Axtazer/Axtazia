@@ -14,6 +14,7 @@ Bot Discord pour le serveur d'Axtazer — et projet d'apprentissage personnel.
 | `/ping` | Latence WebSocket du bot |
 | `/list` | Liste toutes les commandes disponibles |
 | `/wake` | Réveille le PC via Wake-on-LAN *(owner only)* |
+| `/stream <recherche>` | Génère un lien de streaming Jellyfin compatible VRChat (AVPro) *(owner only)* |
 
 ### Interactions
 | Commande | Description |
@@ -62,6 +63,10 @@ NASA_APOD_KEY=        # Clé API NASA (https://api.nasa.gov)
 # Wake-on-LAN
 WOL_API_URL=          # URL de l'API WoL
 WOL_API_TOKEN=        # Token d'auth de l'API WoL
+
+# Jellyfin (/stream)
+JELLYFIN_BASE_URL=    # URL du serveur Jellyfin (ex: https://stream.exemple.com)
+JELLYFIN_API_KEY=     # Clé API Jellyfin (Dashboard > API Keys)
 
 # Twitch EventSub
 TWITCH_CLIENT_ID=         # App Client ID (https://dev.twitch.tv/console)
