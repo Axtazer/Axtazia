@@ -19,11 +19,16 @@
 ```
 .
 ├── commands/                    # Slash commands
+│   ├── games/                  # Games (morpion)
 │   ├── interactions/           # Interactive commands (hug, kiss, nasaPicture)
-│   └── utility/                # Utility commands (ping, botInformations, list, wol)
+│   └── utility/                # Utility commands (ping, botInformations, list, wol, stream)
 ├── events/                     # Discord event handlers
-│   ├── interactionCreate.js    # Handles slash command interactions
-│   └── ready.js                # Bot ready event
+│   ├── interactionCreate.js    # Handles slash commands, autocomplete, buttons, select menus
+│   └── ready.js                # Bot ready event (starts Twitch webhook + profile widget)
+├── src/
+│   ├── discord/profileWidget.js # Profile widget (server uptime from Prometheus)
+│   ├── jellyfin/client.js      # Jellyfin API client (/stream)
+│   └── twitch/                 # Twitch EventSub (webhook server, subscription, notifier)
 ├── index.js                    # Main bot initialization
 ├── deploy-commands.js          # Script to register slash commands with Discord
 ├── package.json                # Dependencies
@@ -65,6 +70,9 @@ Uses `dotenv` to load environment variables from `.env` file:
 - `OWNER_ID`: Owner user ID
 - `NASA_APOD_KEY`: NASA Astronomy Picture of the Day API key
 - `WOL_API_URL` & `WOL_API_TOKEN`: Wake-on-LAN endpoint config
+- `JELLYFIN_BASE_URL`, `JELLYFIN_API_KEY`, `JELLYFIN_STREAM_TOKEN`: Jellyfin (/stream); the stream token (restricted user) goes into shared links, never the admin API key
+- `PROMETHEUS_URL`: metrics API for the profile widget
+- `TWITCH_*`: Twitch EventSub (see `.env.exemple`)
 
 ## Current Commands
 
@@ -78,6 +86,14 @@ Uses `dotenv` to load environment variables from `.env` file:
 - **botInformations** - Display bot info
 - **list** - List available commands
 - **wol** - Wake-on-LAN functionality
+- **stream** - Jellyfin streaming link for VRChat (bot owner / guild owner only)
+
+### Games
+- **morpion** - Tic-tac-toe between two users
+
+### HTTP server (port 3000, `src/twitch/webhookServer.js`)
+- `POST /webhook/twitch` - Twitch EventSub (HMAC signature, 10 min anti-replay, message-id dedupe, 64 KB body cap)
+- `GET /healthz` - 200 when the Discord client is ready (not exposed publicly)
 
 ## Important Implementation Details
 

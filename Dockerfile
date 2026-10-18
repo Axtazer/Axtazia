@@ -17,6 +17,7 @@ COPY --from=builder /app/events ./events
 COPY --from=builder /app/src ./src
 
 USER node
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD node -e "process.exit(0)"
+# /healthz est servi par le serveur webhook Twitch (démarré si TWITCH_WEBHOOK_SECRET est défini)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:' + (process.env.TWITCH_WEBHOOK_PORT || 3000) + '/healthz').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
 CMD ["node", "index.js"]

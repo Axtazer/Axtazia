@@ -248,12 +248,13 @@ module.exports = {
 
 		try {
 			// Public reply so both players see the board
-			const message = await interaction.reply({
+			const response = await interaction.reply({
 				content: `${target} tu es défié au morpion par **${interaction.user.displayName}** !`,
 				embeds: [embed],
 				components,
-				fetchReply: true,
+				withResponse: true,
 			});
+			const message = response.resource.message;
 
 			gameState.messageId = message.id;
 

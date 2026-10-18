@@ -25,7 +25,8 @@ module.exports = {
             const owner = await client.users.fetch(ownerId);
             const bot = client.user;
 
-            const params = new URLSearchParams({ api_key: APODkey, date: dateInput });
+            // thumbs=true : fournit thumbnail_url quand l'APOD du jour est une vidéo
+            const params = new URLSearchParams({ api_key: APODkey, date: dateInput, thumbs: 'true' });
             const response = await fetch(`https://api.nasa.gov/planetary/apod?${params}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -40,8 +41,9 @@ module.exports = {
                 explanation = explanation.substring(0, maxLength - 128) + "*\n\n***La description a été réduite, car si non, il m'est impossible de remplir ma mission.**";
             }
 
-            // Utilisation de hdurl si possible si non, url classique
-            const imageUrl = nasaData.hdurl || nasaData.url;
+            // Image : hdurl si possible, sinon url classique. Vidéo : la miniature (url pointe vers un lecteur embarqué)
+            const isVideo = nasaData.media_type !== 'image';
+            const imageUrl = isVideo ? nasaData.thumbnail_url : (nasaData.hdurl || nasaData.url);
 
             // Création de l'embed
             const nasaEmbed = new EmbedBuilder()
@@ -54,8 +56,14 @@ module.exports = {
                     { name: "Date de l'image", value: nasaData.date, inline: false },
                     { name: 'Explications', value: explanation, inline: false }
                 )
-                .setImage(imageUrl)
                 .setFooter({ text: `${bot.displayName} par ${owner.displayName} avec le 🫀`, iconURL: owner.avatarURL() });
+
+            if (imageUrl) {
+                nasaEmbed.setImage(imageUrl);
+            }
+            if (isVideo && nasaData.url) {
+                nasaEmbed.addFields({ name: 'Vidéo', value: nasaData.url, inline: false });
+            }
 
             await interaction.reply({ embeds: [nasaEmbed] });
         } catch (error) {

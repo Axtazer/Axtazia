@@ -120,6 +120,11 @@ module.exports = {
 	 * @param {AutocompleteInteraction} interaction
 	 */
 	async autocomplete(interaction) {
+		// Pas de suggestions pour les non-autorisés : évite d'exposer le catalogue Jellyfin
+		if (!isAuthorized(interaction)) {
+			return interaction.respond([]);
+		}
+
 		const focused = interaction.options.getFocused();
 
 		if (!focused || focused.trim().length === 0) {
