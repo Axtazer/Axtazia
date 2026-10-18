@@ -50,8 +50,7 @@ module.exports = {
             const categoryOrder = [
                 { originalName: 'utility', displayName: `🤖 Moi, ${bot.displayName}` },
                 { originalName: 'interactions', displayName: '👯 Fun' },
-                // { originalName: 'games', displayName: '🕹️ Jeux' },
-                // { originalName: 'ticketSystem', displayName: '🎟️ Tickets' }
+                { originalName: 'games', displayName: '🕹️ Jeux' },
             ];
 
             // Création de l'embed

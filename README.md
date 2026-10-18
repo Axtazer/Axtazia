@@ -66,7 +66,11 @@ WOL_API_TOKEN=        # Token d'auth de l'API WoL
 
 # Jellyfin (/stream)
 JELLYFIN_BASE_URL=    # URL du serveur Jellyfin (ex: https://stream.exemple.com)
-JELLYFIN_API_KEY=     # Clé API Jellyfin (Dashboard > API Keys)
+JELLYFIN_API_KEY=     # Clé API Jellyfin (Dashboard > API Keys) — recherche, jamais partagée
+JELLYFIN_STREAM_TOKEN= # Token d'un utilisateur Jellyfin dédié (droits restreints) mis dans les liens partagés
+
+# Widget de profil (uptime serveur)
+PROMETHEUS_URL=       # API Prometheus/VictoriaMetrics (défaut : vmsingle interne du cluster)
 
 # Twitch EventSub
 TWITCH_CLIENT_ID=         # App Client ID (https://dev.twitch.tv/console)

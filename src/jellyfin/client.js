@@ -77,11 +77,21 @@ async function getEpisodes(seriesId, seasonId) {
 
 /**
  * Construit l'URL de streaming MP4 transcodé (H.264/AAC), compatible VRChat/AVPro.
+ * Ce lien est partagé (collé dans VRChat, visible par toute l'instance) : il utilise
+ * JELLYFIN_STREAM_TOKEN, le token d'un utilisateur Jellyfin dédié aux droits restreints,
+ * plutôt que la clé API admin. Repli sur JELLYFIN_API_KEY (avec un avertissement) tant
+ * que le token dédié n'est pas configuré.
  * @param {string} itemId
  * @returns {string}
  */
 function buildStreamUrl(itemId) {
-    const { baseUrl, apiKey } = getConfig();
+    const { baseUrl, apiKey: adminKey } = getConfig();
+    const apiKey = process.env.JELLYFIN_STREAM_TOKEN || adminKey;
+
+    if (!process.env.JELLYFIN_STREAM_TOKEN) {
+        console.warn('[Jellyfin] JELLYFIN_STREAM_TOKEN non défini : le lien partagé contient la clé API principale.');
+    }
+
     const url = new URL(`/Videos/${itemId}/stream.mp4`, baseUrl);
 
     url.searchParams.set('VideoCodec', 'h264');

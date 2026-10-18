@@ -13,6 +13,14 @@ const MESSAGE_TYPE_VERIFICATION = 'webhook_callback_verification';
 const MESSAGE_TYPE_NOTIFICATION = 'notification';
 const MESSAGE_TYPE_REVOCATION = 'revocation';
 
+// Les payloads EventSub font quelques Ko : au-delà, la requête est rejetée avant d'être bufferisée
+const MAX_BODY_BYTES = 64 * 1024;
+// Twitch recommande de rejeter les messages de plus de 10 minutes (anti-rejeu)
+const MAX_MESSAGE_AGE_MS = 10 * 60 * 1000;
+
+// IDs des messages déjà traités (Twitch renvoie un message non acquitté à temps) : id -> date de réception
+const seenMessageIds = new Map();
+
 /**
  * Vérifie la signature HMAC-SHA256 de la requête Twitch.
  * @param {string} secret - Le secret HMAC configuré
@@ -42,15 +50,55 @@ function verifySignature(secret, req, body) {
 }
 
 /**
- * Lit le corps complet d'une requête HTTP.
+ * Vérifie que le timestamp du message date de moins de 10 minutes.
+ * @param {string} timestamp - Header twitch-eventsub-message-timestamp (RFC3339)
+ * @returns {boolean}
+ */
+function isRecent(timestamp) {
+    const sentAt = Date.parse(timestamp);
+    if (Number.isNaN(sentAt)) return false;
+    return Math.abs(Date.now() - sentAt) <= MAX_MESSAGE_AGE_MS;
+}
+
+/**
+ * Indique si le message a déjà été traité, et le mémorise sinon.
+ * Les IDs plus vieux que la fenêtre anti-rejeu sont purgés (ils seraient rejetés par isRecent).
+ * @param {string} messageId
+ * @returns {boolean}
+ */
+function isDuplicate(messageId) {
+    const now = Date.now();
+    for (const [id, receivedAt] of seenMessageIds) {
+        if (now - receivedAt > MAX_MESSAGE_AGE_MS) seenMessageIds.delete(id);
+    }
+
+    if (seenMessageIds.has(messageId)) return true;
+    seenMessageIds.set(messageId, now);
+    return false;
+}
+
+/**
+ * Lit le corps complet d'une requête HTTP, dans la limite de MAX_BODY_BYTES.
  * @param {http.IncomingMessage} req
  * @returns {Promise<string>}
  */
 function readBody(req) {
     return new Promise((resolve, reject) => {
-        let data = '';
-        req.on('data', chunk => { data += chunk; });
-        req.on('end', () => resolve(data));
+        const chunks = [];
+        let size = 0;
+        req.on('data', chunk => {
+            size += chunk.length;
+            if (size > MAX_BODY_BYTES) {
+                const err = new Error('Corps de requête trop volumineux.');
+                err.code = 'BODY_TOO_LARGE';
+                req.removeAllListeners('data');
+                req.resume();
+                reject(err);
+                return;
+            }
+            chunks.push(chunk);
+        });
+        req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
         req.on('error', reject);
     });
 }
@@ -69,6 +117,14 @@ function startWebhookServer(client) {
     }
 
     const server = http.createServer(async (req, res) => {
+        // Sonde de vie (non exposée par l'Ingress) : 200 tant que le client Discord est connecté
+        if (req.method === 'GET' && req.url === '/healthz') {
+            const ready = client.isReady();
+            res.writeHead(ready ? 200 : 503, { 'Content-Type': 'text/plain; charset=utf-8' });
+            res.end(ready ? 'ok' : 'discord not ready');
+            return;
+        }
+
         // On ne traite que POST /webhook/twitch
         if (req.method !== 'POST' || req.url !== '/webhook/twitch') {
             res.writeHead(404);
@@ -80,6 +136,12 @@ function startWebhookServer(client) {
         try {
             body = await readBody(req);
         } catch (err) {
+            if (err.code === 'BODY_TOO_LARGE') {
+                console.warn('[Twitch] Corps de requête trop volumineux, requête rejetée.');
+                res.writeHead(413, { Connection: 'close' });
+                res.end();
+                return;
+            }
             console.error('[Twitch] Erreur lecture du corps de la requête:', err);
             res.writeHead(400);
             res.end();
@@ -89,6 +151,14 @@ function startWebhookServer(client) {
         // Vérification de la signature
         if (!verifySignature(secret, req, body)) {
             console.warn('[Twitch] Signature invalide reçue, requête rejetée.');
+            res.writeHead(403);
+            res.end();
+            return;
+        }
+
+        // Message trop ancien : possible rejeu d'une requête signée interceptée
+        if (!isRecent(req.headers[TWITCH_MESSAGE_TIMESTAMP])) {
+            console.warn('[Twitch] Message trop ancien, requête rejetée.');
             res.writeHead(403);
             res.end();
             return;
@@ -129,6 +199,12 @@ function startWebhookServer(client) {
 
             res.writeHead(204);
             res.end();
+
+            // Renvoi d'un message déjà traité : on l'acquitte sans renotifier
+            if (isDuplicate(req.headers[TWITCH_MESSAGE_ID])) {
+                console.log('[Twitch] Message déjà traité, ignoré.');
+                return;
+            }
 
             if (subscriptionType === 'stream.online') {
                 console.log(`[Twitch] Événement stream.online reçu pour broadcaster_id: ${payload.event?.broadcaster_user_id}`);
